@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/codekraft-studio/angular-content-editable.git"
+    "url": "git+https://github.com/andreash/angular-content-editable.git"
   },
   "keywords": [
     "angular",
@@ -19,9 +19,9 @@
   ],
   "author": "codekraft-studio",
   "bugs": {
-    "url": "https://github.com/codekraft-studio/angular-content-editable/issues"
+    "url": "https://github.com/andreash/angular-content-editable/issues"
   },
-  "homepage": "https://github.com/codekraft-studio/angular-content-editable#readme",
+  "homepage": "https://github.com/andreash/angular-content-editable#readme",
   "license": "ISC",
   "devDependencies": {
     "grunt": "^0.4.5",
