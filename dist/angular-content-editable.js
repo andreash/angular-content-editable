@@ -129,7 +129,8 @@ angular.module('angular-content-editable')
         // with arguments: current text and element
         keys_checked = scope.$apply( scope.keyDownCallback(e, elem,getCaretPosition(elem)) );
       }
-      else if (!keys_checked) {
+      
+      if (!keys_checked) {
         if( e.which === 9 ) {
           // on tab key blur and
           // TODO: focus to next
