@@ -1,11 +1,12 @@
 angular.module('angular-content-editable')
 
-.directive('contentEditable', function ($log, $sce, $parse, $window, contentEditable) {
+.directive('contentEditable', ['$log', '$sce', '$parse', '$window', 'contentEditable', function ($log, $sce, $parse, $window, contentEditable) {
 
   var directive = {
     restrict: 'A',
     require: 'ngModel',
-    scope: { editCallback: '=' },
+    scope: { editCallback: '=',
+      focusCallback: '=' }, //map functions from outer (controller) scope to directive scope
     link: _link
   }
 
@@ -68,6 +69,12 @@ angular.module('angular-content-editable')
       // in order to modify html tags
       if( options.renderHtml ) {
         originalElement.textContent = elem.html();
+      }
+      
+      if( scope.focusCallback && angular.isFunction(scope.focusCallback) ) {
+        // apply the callback
+        // with arguments: current text and element
+        return scope.$apply( scope.focusCallback(elem.html(), elem) );
       }
 
     }
@@ -177,4 +184,4 @@ angular.module('angular-content-editable')
 
   }
 
-})
+}])
