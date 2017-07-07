@@ -6,10 +6,10 @@ angular.module('angular-content-editable')
     restrict: 'A',
     require: 'ngModel',
     scope: { editCallback: '=',
-      focusCallback: '=' }, //map functions from outer (controller) scope to directive scope
+      focusCallback: '=' ,
+      keyDownCallback: '='}, //map functions from outer (controller) scope to directive scope
     link: _link
   }
-
   return directive;
 
   function _link(scope, elem, attrs, ngModel) {
@@ -117,34 +117,36 @@ angular.module('angular-content-editable')
           // with arguments: current text and element
           return scope.$apply( scope.editCallback(html, elem) );
         }
-
       }
-
-    }
+    };
 
     function onKeyDown(e) {
-
-      // on tab key blur and
-      // TODO: focus to next
-      if( e.which == 9 ) {
-        originalElement.blur();
-        return;
+      var keys_checked = false;
+      if( scope.keyDownCallback && angular.isFunction(scope.keyDownCallback) ) {
+        // apply the callback
+        // with arguments: current text and element
+        keys_checked = scope.$apply( scope.keyDownCallback(e, elem,getCaretPosition(elem)) );
       }
-
-      // on esc key roll back value and blur
-      if( e.which == 27 ) {
-        ngModel.$rollbackViewValue();
-        noEscape = false;
-        return originalElement.blur();
+      else if (!keys_checked) {
+        if( e.which === 9 ) {
+          // on tab key blur and
+          // TODO: focus to next
+          originalElement.blur();
+          return;
+        }
+        else if( e.which === 27 ) {
+          // on esc key roll back value and blur
+          ngModel.$rollbackViewValue();
+          noEscape = false;
+          return originalElement.blur();
+        }
+        else if( e.which === 13 && (options.singleLine || e.ctrlKey) ) {
+          // if single line or ctrl key is
+          // pressed trigger the blur event
+          return originalElement.blur();
+        }
       }
-
-      // if single line or ctrl key is
-      // pressed trigger the blur event
-      if( e.which == 13 && (options.singleLine || e.ctrlKey) ) {
-        return originalElement.blur();
-      }
-
-    }
+    };
 
     /**
     * On click turn the element
@@ -181,7 +183,18 @@ angular.module('angular-content-editable')
       elem.off('blur', onBlur);
       elem.off('keydown', onKeyDown);
     });
-
+  };
+  
+  function getCaretPosition(editable) {
+    var caretPos = 0, sel, range;
+    sel = window.getSelection();
+    if (sel.rangeCount) {
+      range = sel.getRangeAt(0);
+      if (range.commonAncestorContainer.parentNode === editable[0]) {
+        caretPos = range.endOffset;
+      }
+    }
+    return caretPos;
   }
 
 }])
