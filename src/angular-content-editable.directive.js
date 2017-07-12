@@ -44,6 +44,9 @@ angular.module('angular-content-editable')
     // handle click on element
     function onClick(e){
       e.preventDefault();
+      if (e.ctrlKey) {
+        e.stopPropagation();
+      }
       attrs.$set('contenteditable', 'true');
       return originalElement.focus();
     }
