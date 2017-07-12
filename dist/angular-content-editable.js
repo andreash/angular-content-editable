@@ -4,206 +4,219 @@ angular.module('angular-content-editable')
 
 .directive('contentEditable', ['$log', '$sce', '$parse', '$window', 'contentEditable', function ($log, $sce, $parse, $window, contentEditable) {
 
-  var directive = {
-    restrict: 'A',
-    require: 'ngModel',
-    scope: { editCallback: '=',
-      focusCallback: '=' ,
-      keyDownCallback: '='}, //map functions from outer (controller) scope to directive scope
-    link: _link
-  }
-  return directive;
-
-  function _link(scope, elem, attrs, ngModel) {
-
-    // return if ng model not specified
-    if(!ngModel) {
-      $log.warn('Error: ngModel is required in elem: ', elem);
-      return;
+    var directive = {
+      restrict: 'A',
+      require: 'ngModel',
+      scope: {editCallback: '=',
+        focusCallback: '=',
+        keyDownCallback: '='}, //map functions from outer (controller) scope to directive scope
+      link: _link
     }
+    return directive;
 
-    var noEscape = true;
-    var originalElement = elem[0];
+    function _link(scope, elem, attrs, ngModel) {
 
-    // get default usage options
-    var options = angular.copy(contentEditable);
-
-    // update options with attributes
-    angular.forEach(options, function (val, key) {
-      if( key in attrs ) {
-        options[key] = $parse(attrs[key])(scope);
-      }
-    });
-    
-    // add editable class
-    attrs.$addClass(options.editableClass);
-
-    // render always with model value
-    ngModel.$render = function() {
-      elem.html( ngModel.$modelValue || elem.html() );
-    }
-
-    // handle click on element
-    function onClick(e){
-      e.preventDefault();
-      if (e.ctrlKey) {
-        e.stopPropagation();
-      }
-      attrs.$set('contenteditable', 'true');
-      return originalElement.focus();
-    }
-
-    // check some option extra
-    // conditions during focus
-    function onFocus(e) {
-
-      // turn on the flag
-      noEscape = true;
-
-      // select all on focus
-      if( options.focusSelect ) {
-        var range = $window.document.createRange();
-        var selection = $window.getSelection();
-        range.selectNodeContents( originalElement );
-        selection.removeAllRanges();
-        selection.addRange(range);
+      // return if ng model not specified
+      if (!ngModel) {
+        $log.warn('Error: ngModel is required in elem: ', elem);
+        return;
       }
 
-      // if render-html is enabled convert
-      // all text content to plaintext
-      // in order to modify html tags
-      if( options.renderHtml ) {
-        originalElement.textContent = elem.html();
-      }
-      
-      if( scope.focusCallback && angular.isFunction(scope.focusCallback) ) {
-        // apply the callback
-        // with arguments: current text and element
-        return scope.$apply( scope.focusCallback(elem.html(), elem) );
-      }
+      var noEscape = true;
+      var originalElement = elem[0];
 
-    }
+      // get default usage options
+      var options = angular.copy(contentEditable);
 
-    function onBlur(e) {
+      // update options with attributes
+      angular.forEach(options, function (val, key) {
+        if (key in attrs) {
+          options[key] = $parse(attrs[key])(scope);
+        }
+      });
 
-      // the text
-      var html;
+      // add editable class
+      attrs.$addClass(options.editableClass);
 
-      // disable editability
-      attrs.$set('contenteditable', 'false');
-
-      // if text needs to be rendered as html
-      if( options.renderHtml && noEscape ) {
-        // get plain text html (with html tags)
-        // replace all blank spaces
-        html = originalElement.textContent.replace(/\u00a0/g, " ");
-        // update elem html value
-        elem.html(html);
-
-      } else {
-        // get element content replacing html tag
-        html = elem.html().replace(/&nbsp;/g, ' ');
+      // render always with model value
+      ngModel.$render = function () {
+        elem.html(ngModel.$modelValue || elem.html());
       }
 
-      // if element value is
-      // different from model value
-      if( html != ngModel.$modelValue ) {
+      // handle click on element
+      function onClick(e) {
+        /*
+         * if clicked on a link or an anchor, go into edit mode
+         * only if ctrl key was pressed and then avoid opening
+         * the link
+         */
+        if ($(e.target).closest('a').length) {
+          if (e.ctrlKey) {
+            e.stopPropagation();
+            e.preventDefault();
+            attrs.$set('contenteditable', 'true');
+            return originalElement.focus();
+          }
+        } else {
+          e.preventDefault();
+          attrs.$set('contenteditable', 'true');
+          return originalElement.focus();
+        }
+      }
 
-        /**
-        * This method should be called
-        * when a controller wants to
-        * change the view value
-        */
-        ngModel.$setViewValue(html)
-        // if user passed a variable
-        // and is a function
-        if( scope.editCallback && angular.isFunction(scope.editCallback) ) {
+      // check some option extra
+      // conditions during focus
+      function onFocus(e) {
+
+        // turn on the flag
+        noEscape = true;
+
+        // select all on focus
+        if (options.focusSelect) {
+          var range = $window.document.createRange();
+          var selection = $window.getSelection();
+          range.selectNodeContents(originalElement);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+
+        // if render-html is enabled convert
+        // all text content to plaintext
+        // in order to modify html tags
+        if (options.renderHtml) {
+          originalElement.textContent = elem.html();
+        }
+
+        if (scope.focusCallback && angular.isFunction(scope.focusCallback)) {
           // apply the callback
           // with arguments: current text and element
-          return scope.$apply( scope.editCallback(html, elem) );
+          return scope.$apply(scope.focusCallback(elem.html(), elem));
+        }
+
+      }
+
+      function onBlur(e) {
+
+        // the text
+        var html;
+
+        // disable editability
+        attrs.$set('contenteditable', 'false');
+
+        // if text needs to be rendered as html
+        if (options.renderHtml && noEscape) {
+          // get plain text html (with html tags)
+          // replace all blank spaces
+          html = originalElement.textContent.replace(/\u00a0/g, " ");
+          // update elem html value
+          elem.html(html);
+
+        } else {
+          // get element content replacing html tag
+          html = elem.html().replace(/&nbsp;/g, ' ');
+        }
+
+        // if element value is
+        // different from model value
+        if (html !== ngModel.$modelValue) {
+
+          /**
+           * This method should be called
+           * when a controller wants to
+           * change the view value
+           */
+          ngModel.$setViewValue(html);
+          // if user passed a variable
+          // and is a function
+          if (scope.editCallback && angular.isFunction(scope.editCallback)) {
+            // apply the callback
+            // with arguments: current text and element
+            return scope.editCallback(html, elem);
+            //return scope.$apply( scope.editCallback(html, elem) );
+          }
         }
       }
-    };
+      ;
 
-    function onKeyDown(e) {
-      var keys_checked = false;
-      if( scope.keyDownCallback && angular.isFunction(scope.keyDownCallback) ) {
-        // apply the callback
-        // with arguments: current text and element
-        keys_checked = scope.$apply( scope.keyDownCallback(e, elem,getCaretPosition(elem)) );
-      }
+      function onKeyDown(e) {
+        var keys_checked = false;
+        if (scope.keyDownCallback && angular.isFunction(scope.keyDownCallback)) {
+          // apply the callback
+          // with arguments: current text and element
+          //keys_checked = scope.$apply( scope.keyDownCallback(e, elem,getCaretPosition(elem)) );
+          keys_checked = scope.keyDownCallback(e, elem, getCaretPosition(elem));
+        }
+
+        if (!keys_checked) {
+          if (e.which === 9) {
+            // on tab key blur and
+            // TODO: focus to next
+            originalElement.blur();
+            return;
+          } else if (e.which === 27) {
+            // on esc key roll back value and blur
+            ngModel.$rollbackViewValue();
+            noEscape = false;
+            return originalElement.blur();
+          } else if (e.which === 13 && (options.singleLine || e.ctrlKey)) {
+            // if single line or ctrl key is
+            // pressed trigger the blur event
+            return originalElement.blur();
+          }
+        }
+      };
       
-      if (!keys_checked) {
-        if( e.which === 9 ) {
-          // on tab key blur and
-          // TODO: focus to next
-          originalElement.blur();
-          return;
-        }
-        else if( e.which === 27 ) {
-          // on esc key roll back value and blur
-          ngModel.$rollbackViewValue();
-          noEscape = false;
-          return originalElement.blur();
-        }
-        else if( e.which === 13 && (options.singleLine || e.ctrlKey) ) {
-          // if single line or ctrl key is
-          // pressed trigger the blur event
-          return originalElement.blur();
-        }
-      }
-    };
+      /**
+       * On click turn the element
+       * to editable and focus it
+       */
+      elem.on('click', onClick);
 
-    /**
-    * On click turn the element
-    * to editable and focus it
-    */
-    elem.on('click', onClick);
+      /**
+       * On element focus
+       */
+      elem.on('focus', onFocus);
 
-    /**
-    * On element focus
-    */
-    elem.on('focus', onFocus);
+      /**
+       * On element blur turn off
+       * editable mode, if HTML, render
+       * update model value and run callback
+       * if specified
+       */
+      elem.on('blur', onBlur);
 
-    /**
-    * On element blur turn off
-    * editable mode, if HTML, render
-    * update model value and run callback
-    * if specified
-    */
-    elem.on('blur', onBlur);
+      /**
+       * Bind the keydown event for many functions
+       */
+      elem.on('keydown', onKeyDown);
 
-    /**
-    * Bind the keydown event for many functions
-    */
-    elem.on('keydown', onKeyDown);
-
-    /**
-    * On element destroy, remove all event
-    * listeners related to the directive
-    * (helps to prevent memory leaks)
-    */
-    scope.$on('$destroy', function () {
-      elem.off('click', onClick);
-      elem.off('focus', onFocus);
-      elem.off('blur', onBlur);
-      elem.off('keydown', onKeyDown);
-    });
-  };
-  
-  function getCaretPosition(editable) {
-    var caretPos = 0, sel, range;
-    sel = window.getSelection();
-    if (sel.rangeCount) {
-      range = sel.getRangeAt(0);
-      if (range.commonAncestorContainer.parentNode === editable[0]) {
-        caretPos = range.endOffset;
-      }
+      /**
+       * On element destroy, remove all event
+       * listeners related to the directive
+       * (helps to prevent memory leaks)
+       */
+      scope.$on('$destroy', function () {
+        elem.off('click', onClick);
+        elem.off('focus', onFocus);
+        elem.off('blur', onBlur);
+        elem.off('keydown', onKeyDown);
+      });
     }
-    return caretPos;
-  }
+    ;
 
-}])
+    function getCaretPosition(editable) {
+      var caretPos = 0, sel, range;
+      sel = window.getSelection();
+      if (sel.rangeCount) {
+        range = sel.getRangeAt(0);
+        if (range.commonAncestorContainer.parentNode === editable[0]) {
+          caretPos = range.endOffset;
+        }
+      }
+      return caretPos;
+    }
+
+  }])
 
 angular.module('angular-content-editable')
 
