@@ -8,12 +8,8 @@ angular.module('angular-content-editable')
     restrict: 'A',
     require: 'ngModel',
     scope: { editCallback: '=',
-<<<<<<< HEAD
-      focusCallback: '=' }, //map functions from outer (controller) scope to directive scope
-=======
       focusCallback: '=' ,
       keyDownCallback: '='}, //map functions from outer (controller) scope to directive scope
->>>>>>> d219f3fb055e8c19155ab4d6228673ce00d36cb0
     link: _link
   }
   return directive;
@@ -50,6 +46,9 @@ angular.module('angular-content-editable')
     // handle click on element
     function onClick(e){
       e.preventDefault();
+      if (e.ctrlKey) {
+        e.stopPropagation();
+      }
       attrs.$set('contenteditable', 'true');
       return originalElement.focus();
     }
